@@ -135,6 +135,115 @@ def compare_drivers():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/tire-analysis/<session_id>/<driver_code>', methods=['GET'])
+def analyze_tire(session_id, driver_code):
+    """Analyze tire degradation for a driver in a session"""
+    try:
+        from tire_analysis import analyze_tire_degradation, tire_analysis_to_json
+        
+        db = F1DatabaseManager(db_config)
+        db.connect()
+        
+        # Get lap times for this driver
+        query = """
+            SELECT lap_number, lap_time_seconds, compound 
+            FROM laps 
+            WHERE session_id = %s AND driver_code = %s 
+            ORDER BY lap_number
+        """
+        db.cursor.execute(query, (session_id, driver_code))
+        laps = db.cursor.fetchall()
+        db.close()
+        
+        if not laps:
+            return jsonify({'error': 'No lap data found'}), 404
+        
+        # Group by stint (based on compound changes and gaps)
+        stints = []
+        current_stint = {'compound': None, 'laps': []}
+        
+        for lap in laps:
+            lap_num, lap_time, compound = lap[0], lap[1], lap[2] or 'UNKNOWN'
+            
+            if lap_time is None or lap_time < 60:  # Skip invalid laps
+                continue
+                
+            if current_stint['compound'] != compound:
+                if current_stint['laps']:
+                    stints.append(current_stint)
+                current_stint = {'compound': compound, 'laps': [lap_time]}
+            else:
+                current_stint['laps'].append(lap_time)
+        
+        if current_stint['laps']:
+            stints.append(current_stint)
+        
+        # Analyze each stint
+        analyses = []
+        for stint in stints:
+            analysis = analyze_tire_degradation(stint['laps'], stint['compound'])
+            analyses.append(tire_analysis_to_json(analysis))
+        
+        return jsonify({
+            'driver': driver_code,
+            'session_id': session_id,
+            'stints': analyses,
+            'total_stints': len(analyses)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pit-strategy/<session_id>/<driver_code>', methods=['GET'])
+def get_pit_strategy(session_id, driver_code):
+    """Calculate optimal pit window for a driver"""
+    try:
+        from tire_analysis import calculate_optimal_pit_window, analyze_tire_degradation
+        
+        total_laps = int(request.args.get('total_laps', 57))  # Default Monaco laps
+        current_lap = int(request.args.get('current_lap', 1))
+        
+        db = F1DatabaseManager(db_config)
+        db.connect()
+        
+        query = """
+            SELECT lap_number, lap_time_seconds 
+            FROM laps 
+            WHERE session_id = %s AND driver_code = %s 
+            ORDER BY lap_number
+        """
+        db.cursor.execute(query, (session_id, driver_code))
+        laps = db.cursor.fetchall()
+        db.close()
+        
+        if not laps:
+            return jsonify({'error': 'No lap data found'}), 404
+        
+        lap_times = [l[1] for l in laps if l[1] and l[1] > 60]
+        current_tire_age = len(lap_times)
+        
+        analysis = analyze_tire_degradation(lap_times)
+        deg_rate = analysis.degradation_rate
+        
+        earliest, latest, recommendation = calculate_optimal_pit_window(
+            current_lap, total_laps, current_tire_age, deg_rate
+        )
+        
+        return jsonify({
+            'driver': driver_code,
+            'current_lap': current_lap,
+            'current_tire_age': current_tire_age,
+            'degradation_rate': deg_rate,
+            'pit_window': {
+                'earliest': earliest,
+                'latest': latest
+            },
+            'recommendation': recommendation
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("🏎️  Starting F1 Telemetry API...")
     app.run(debug=True, port=5000)
