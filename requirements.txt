@@ -1,4 +1,8 @@
 flask
 flask-cors
-psycopg2-binary
+fastf1
 python-dotenv
+psycopg2-binary
+scipy
+numpy
+scikit-learn
