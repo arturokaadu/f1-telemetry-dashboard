@@ -1,0 +1,80 @@
+.App {
+  text-align: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a15 0%, #1a1a2e 100%);
+  color: #fff;
+}
+
+.App-header {
+  background: rgba(255, 107, 53, 0.1);
+  padding: 2rem;
+  border-bottom: 3px solid #FF6B35;
+}
+
+.App-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  color: #FF6B35;
+  text-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+}
+
+.App-header p {
+  margin: 0.5rem 0 0 0;
+  color: #FFB7C5;
+  font-size: 1.2rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.driver-comparison {
+  background: rgba(139, 92, 246, 0.1);
+  border: 2px solid #8B5CF6;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.driver-comparison h2 {
+  color: #8B5CF6;
+  margin-top: 0;
+}
+
+.driver-selectors {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.driver-selectors select {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background: rgba(255, 107, 53, 0.2);
+  border: 2px solid #FF6B35;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.driver-selectors select:hover {
+  background: rgba(255, 107, 53, 0.3);
+}
+
+.driver-selectors span {
+  color: #FFB7C5;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+footer {
+  margin-top: 4rem;
+  padding: 2rem;
+  background: rgba(139, 92, 246, 0.1);
+  border-top: 2px solid #8B5CF6;
+  color: #c4b5fd;
+}
